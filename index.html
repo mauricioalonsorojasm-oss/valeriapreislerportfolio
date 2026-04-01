@@ -284,32 +284,49 @@
     .gallery-item:hover img { transform: scale(1.04); }
 
     /* ── ABOUT ── */
-    .about-page {
-      padding: 3rem;
-      max-width: 680px;
-    }
+    .about-page { padding: 3rem; }
     .about-label {
       font-size: 0.65rem;
       letter-spacing: 0.18em;
       text-transform: uppercase;
       color: var(--ink-faint);
-      margin-bottom: 2rem;
+      margin-bottom: 2.5rem;
+    }
+    .about-layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 4rem;
+      align-items: start;
+    }
+    .about-photo {
+      width: 100%;
+      aspect-ratio: 3/4;
+      overflow: hidden;
+      background: #E8E4DF;
+    }
+    .about-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
     .about-name {
       font-family: var(--font-display);
-      font-size: 2.5rem;
+      font-size: 2rem;
       font-weight: 300;
       font-style: italic;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
       line-height: 1.1;
     }
     .about-body {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       color: var(--ink-muted);
-      line-height: 1.9;
-      margin-bottom: 2.5rem;
+      line-height: 1.95;
+      margin-bottom: 2rem;
     }
-    .about-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 2.5rem; }
+    .about-body p { margin-bottom: 1.25rem; }
+    .about-body p:last-child { margin-bottom: 0; }
+    .about-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 2rem; }
     .about-tag {
       font-size: 0.6rem;
       letter-spacing: 0.14em;
@@ -389,26 +406,34 @@
 
 <div id="page-about" class="page about-page">
   <p class="about-label">About</p>
-  <h2 class="about-name">Valeria Preisler</h2>
-  <p class="about-body">
-    With a background in Visual Arts and Photography, I began my career in 2013 as a Jr. Art Director, which allowed me to quickly move into Film and Photo productions, with a strong focus on the Fashion industry and Automotive. Since then, I have collaborated with clients, filmmakers, photographers and post producers on a wide range of creative projects across South America, Europe, Asia and Africa.
-    I can develop and execute successful campaigns from start to finish — from briefings, research, and creative proposals to budget management, scheduling, team coordination, shooting, post production and final delivery.
-    If you find my portfolio interesting, let’s talk!
-  </p>
-  <div class="about-tags">
-    <span class="about-tag">Creative production</span>
-    <span class="about-tag">Campaigns</span>
-    <span class="about-tag">Photography</span>
-    <span class="about-tag">Video</span>
-    <span class="about-tag">Direction</span>
+  <div class="about-layout">
+    <div class="about-photo">
+      <img src="images/ValeriaPreisler.webp" alt="Valeria Preisler" />
+    </div>
+    <div>
+      <h2 class="about-name">Valeria Preisler</h2>
+      <div class="about-body">
+        <p>With a background in Visual Arts and Photography, I began my career in 2013 as a Jr. Art Director, which allowed me to quickly move into Film and Photo productions, with a strong focus on the Fashion industry and Automotive.</p>
+        <p>Since then, I have collaborated with clients, filmmakers, photographers and post producers on a wide range of creative projects across South America, Europe, Asia and Africa.</p>
+        <p>I can develop and execute successful campaigns from start to finish — from briefings, research, and creative proposals to budget management, scheduling, team coordination, shooting, post production and final delivery.</p>
+        <p>If you find my portfolio interesting, let's talk!</p>
+      </div>
+      <div class="about-tags">
+        <span class="about-tag">Creative production</span>
+        <span class="about-tag">Campaigns</span>
+        <span class="about-tag">Photography</span>
+        <span class="about-tag">Video</span>
+        <span class="about-tag">Direction</span>
+      </div>
+      <a class="footer-link" href="mailto:valeria.preisler@gmail.com" style="font-size:0.75rem;">
+        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="3.5" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="1.1"/>
+          <path d="M1.5 4.5L8 9.5L14.5 4.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+        </svg>
+        valeria.preisler@gmail.com
+      </a>
+    </div>
   </div>
-  <a class="footer-link" href="mailto:valeria.preisler@gmail.com" style="font-size:0.75rem;">
-    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="1" y="3.5" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="1.1"/>
-      <path d="M1.5 4.5L8 9.5L14.5 4.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
-    </svg>
-    valeria.preisler@gmail.com
-  </a>
 </div>
 
 <footer>
@@ -517,18 +542,45 @@
     return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0&modestbranding=1`;
   }
 
-  function renderGrid() {
+  async function fetchVimeoThumbnail(videoId) {
+    try {
+      const res = await fetch(`https://vimeo.com/api/oembed.json?url=https://vimeo.com/${videoId}&width=800`);
+      const data = await res.json();
+      return data.thumbnail_url || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function renderGrid() {
     const grid = document.getElementById('projects-grid');
+
+    const thumbnails = {};
+    await Promise.all(projects.filter(p => p.type === 'video' && p.platform === 'vimeo').map(async p => {
+      thumbnails[p.id] = await fetchVimeoThumbnail(p.videoId);
+    }));
+
     grid.innerHTML = projects.map(p => {
-      const thumbHtml = p.type === 'video'
-        ? `<div class="thumb-placeholder">
+      let thumbHtml;
+      if (p.type === 'video') {
+        const thumb = thumbnails[p.id];
+        thumbHtml = thumb
+          ? `<img src="${thumb}" alt="${p.title}" loading="lazy" />
              <div class="play-overlay">
                <div class="play-circle">
                  <svg viewBox="0 0 14 14"><polygon points="3,1 13,7 3,13"/></svg>
                </div>
-             </div>
-           </div>`
-        : `<img src="${p.cover}" alt="${p.title}" loading="lazy" />`;
+             </div>`
+          : `<div class="thumb-placeholder">
+               <div class="play-overlay">
+                 <div class="play-circle">
+                   <svg viewBox="0 0 14 14"><polygon points="3,1 13,7 3,13"/></svg>
+                 </div>
+               </div>
+             </div>`;
+      } else {
+        thumbHtml = `<img src="${p.cover}" alt="${p.title}" loading="lazy" />`;
+      }
 
       return `
         <div class="project-card" onclick="showDetail(${p.id})">
